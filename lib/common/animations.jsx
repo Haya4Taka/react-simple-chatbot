@@ -22,4 +22,13 @@ const pulse = color => keyframes`
   100% { box-shadow: 0 0 0 0 ${rgba(color, 0)}; }
 `;
 
-export { loading, scale, invalidInput, pulse };
+const slideIn = keyframes`
+  0% {
+    transform: translateX(-60px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+`;
+
+export { loading, scale, invalidInput, pulse, slideIn };

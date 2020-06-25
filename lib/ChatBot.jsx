@@ -14,7 +14,10 @@ import {
   FloatingIcon,
   Footer,
   Input,
-  SubmitButton
+  SubmitButton,
+  ChangeButton,
+  InputOption,
+  SecondInputOptionContainer
 } from './components';
 import Recognition from './recognition';
 import { ChatIcon, CloseIcon, SubmitIcon, MicIcon } from './icons';
@@ -51,10 +54,12 @@ class ChatBot extends Component {
       inputInvalid: false,
       speaking: false,
       recognitionEnable: props.recognitionEnable && Recognition.isSupported(),
-      defaultUserSettings: {}
+      defaultUserSettings: {},
+      textMode: true
     };
 
     this.speak = speakFn(props.speechSynthesis);
+    this.secondInputOptionContainer = React.createRef();
   }
 
   componentDidMount() {
@@ -62,6 +67,7 @@ class ChatBot extends Component {
     const {
       botDelay,
       botAvatar,
+      botName,
       cache,
       cacheName,
       customDelay,
@@ -71,7 +77,7 @@ class ChatBot extends Component {
     } = this.props;
     const chatSteps = {};
 
-    const defaultBotSettings = { delay: botDelay, avatar: botAvatar };
+    const defaultBotSettings = { delay: botDelay, avatar: botAvatar, botName };
     const defaultUserSettings = {
       delay: userDelay,
       avatar: userAvatar,
@@ -124,6 +130,13 @@ class ChatBot extends Component {
       window.addEventListener('resize', this.onResize);
     }
 
+    if (this.secondInputOptionContainer.current) {
+      this.secondInputOptionContainer.current.addEventListener(
+        'secondInputOptionClicked',
+        this.handleSecondInputOption
+      );
+    }
+
     const { currentStep, previousStep, previousSteps, renderedSteps } = storage.getData(
       {
         cacheName,
@@ -142,7 +155,7 @@ class ChatBot extends Component {
         });
       }
     );
-
+    console.log('componentDidMount');
     this.setState({
       currentStep,
       defaultUserSettings,
@@ -154,12 +167,20 @@ class ChatBot extends Component {
   }
 
   static getDerivedStateFromProps(props, state) {
+    console.log('props on chatbot', props.steps);
+    console.log('state on chatbot', state);
     const { opened, toggleFloating } = props;
     if (toggleFloating !== undefined && opened !== undefined && opened !== state.opened) {
       return {
         ...state,
         opened
       };
+    }
+    if (
+      state.steps.check &&
+      state.steps.check.metadata.secondChoice !== props.steps[2].metadata.secondChoice
+    ) {
+      state.steps.check.metadata.secondChoice = props.steps[2].metadata.secondChoice;
     }
     return state;
   }
@@ -441,6 +462,16 @@ class ChatBot extends Component {
     this.submitUserMessage();
   };
 
+  handleChangeButtton = () => {
+    const { textMode } = this.state;
+    this.setState({ textMode: !textMode });
+  };
+
+  handleSecondInputOption = event => {
+    console.log('handleSecondInput', this.state);
+    this.triggerNextStep({ value: event.detail.value, trigger: event.detail.trigger });
+  };
+
   submitUserMessage = () => {
     const { defaultUserSettings, inputValue, previousSteps, renderedSteps } = this.state;
     let { currentStep } = this.state;
@@ -538,6 +569,7 @@ class ChatBot extends Component {
     const { options, component, asMessage } = step;
     const steps = this.generateRenderedStepsById();
     const previousStep = index > 0 ? renderedSteps[index - 1] : {};
+    console.log('render step', this.state);
 
     if (component && !asMessage) {
       return (
@@ -555,6 +587,7 @@ class ChatBot extends Component {
     }
 
     if (options) {
+      console.log('options step', this.state);
       return (
         <OptionsStep
           key={index}
@@ -595,13 +628,17 @@ class ChatBot extends Component {
       opened,
       renderedSteps,
       speaking,
-      recognitionEnable
+      recognitionEnable,
+      textMode
     } = this.state;
     const {
+      changable,
       className,
       contentStyle,
       extraControl,
       controlStyle,
+      changeButtonStyle,
+      changeButtonText,
       floating,
       floatingIcon,
       floatingStyle,
@@ -609,11 +646,16 @@ class ChatBot extends Component {
       headerComponent,
       headerTitle,
       hideHeader,
+      hideSecondInputOption,
       hideSubmitButton,
+      inputOptionContainerStyle,
       inputStyle,
       placeholder,
       inputAttributes,
+      inputOptionElements,
       recognitionPlaceholder,
+      secondInputOptionContainerStyle,
+      secondInputOptionElements,
       style,
       submitButtonStyle,
       width,
@@ -681,8 +723,17 @@ class ChatBot extends Component {
           >
             {renderedSteps.map(this.renderStep)}
           </Content>
-          <Footer className="rsc-footer" style={footerStyle}>
-            {!currentStep.hideInput && (
+          <Footer className="rsc-footer" style={footerStyle} ref={this.secondInputOptionContainer}>
+            {changable && (
+              <ChangeButton
+                className="rsc-change-button"
+                style={changeButtonStyle}
+                onClick={this.handleChangeButtton}
+              >
+                {textMode ? changeButtonText[0] : changeButtonText[1]}
+              </ChangeButton>
+            )}
+            {textMode && !currentStep.hideInput && (
               <Input
                 type="textarea"
                 style={inputStyle}
@@ -696,24 +747,43 @@ class ChatBot extends Component {
                 invalid={inputInvalid}
                 disabled={disabled}
                 hasButton={!hideSubmitButton}
+                changable={changable}
                 {...inputAttributesOverride}
               />
             )}
-            <div style={controlStyle} className="rsc-controls">
-              {!currentStep.hideInput && !currentStep.hideExtraControl && customControl}
-              {!currentStep.hideInput && !hideSubmitButton && (
-                <SubmitButton
-                  className="rsc-submit-button"
-                  style={submitButtonStyle}
-                  onClick={this.handleSubmitButton}
-                  invalid={inputInvalid}
-                  disabled={disabled}
-                  speaking={speaking}
-                >
-                  {icon}
-                </SubmitButton>
-              )}
-            </div>
+            {textMode && (
+              <div style={controlStyle} className="rsc-controls">
+                {!currentStep.hideInput && !currentStep.hideExtraControl && customControl}
+                {!currentStep.hideInput && !hideSubmitButton && (
+                  <SubmitButton
+                    className="rsc-submit-button"
+                    style={submitButtonStyle}
+                    onClick={this.handleSubmitButton}
+                    invalid={inputInvalid}
+                    disabled={disabled}
+                    speaking={speaking}
+                    changable={changable}
+                  >
+                    {icon}
+                  </SubmitButton>
+                )}
+              </div>
+            )}
+
+            {/* non text mode */}
+            {!textMode && (
+              <InputOption className="rsc-input-option" style={inputOptionContainerStyle}>
+                {!hideSecondInputOption && (
+                  <SecondInputOptionContainer
+                    className="rsc-second-input-option"
+                    style={secondInputOptionContainerStyle}
+                  >
+                    {secondInputOptionElements}
+                  </SecondInputOptionContainer>
+                )}
+                {inputOptionElements}
+              </InputOption>
+            )}
           </Footer>
         </ChatBotContainer>
       </div>
@@ -724,16 +794,20 @@ class ChatBot extends Component {
 ChatBot.propTypes = {
   avatarStyle: PropTypes.objectOf(PropTypes.any),
   botAvatar: PropTypes.string,
+  botName: PropTypes.string,
   botDelay: PropTypes.number,
   bubbleOptionStyle: PropTypes.objectOf(PropTypes.any),
   bubbleStyle: PropTypes.objectOf(PropTypes.any),
   cache: PropTypes.bool,
   cacheName: PropTypes.string,
+  changable: PropTypes.bool,
   className: PropTypes.string,
   contentStyle: PropTypes.objectOf(PropTypes.any),
   customDelay: PropTypes.number,
   customStyle: PropTypes.objectOf(PropTypes.any),
   controlStyle: PropTypes.objectOf(PropTypes.any),
+  changeButtonStyle: PropTypes.objectOf(PropTypes.any),
+  changeButtonText: PropTypes.arrayOf(PropTypes.string),
   enableMobileAutoFocus: PropTypes.bool,
   enableSmoothScroll: PropTypes.bool,
   extraControl: PropTypes.objectOf(PropTypes.element),
@@ -747,9 +821,12 @@ ChatBot.propTypes = {
   height: PropTypes.string,
   hideBotAvatar: PropTypes.bool,
   hideHeader: PropTypes.bool,
+  hideSecondInputOption: PropTypes.bool,
   hideSubmitButton: PropTypes.bool,
   hideUserAvatar: PropTypes.bool,
   inputAttributes: PropTypes.objectOf(PropTypes.any),
+  inputOptionContainerStyle: PropTypes.objectOf(PropTypes.any),
+  inputOptionElements: PropTypes.arrayOf(PropTypes.element),
   inputStyle: PropTypes.objectOf(PropTypes.any),
   opened: PropTypes.bool,
   toggleFloating: PropTypes.func,
@@ -757,6 +834,8 @@ ChatBot.propTypes = {
   recognitionEnable: PropTypes.bool,
   recognitionLang: PropTypes.string,
   recognitionPlaceholder: PropTypes.string,
+  secondInputOptionContainerStyle: PropTypes.objectOf(PropTypes.any),
+  secondInputOptionElements: PropTypes.arrayOf(PropTypes.element),
   speechSynthesis: PropTypes.shape({
     enable: PropTypes.bool,
     lang: PropTypes.string,
@@ -776,14 +855,18 @@ ChatBot.propTypes = {
 ChatBot.defaultProps = {
   avatarStyle: {},
   botDelay: 1000,
+  botName: 'The bot',
   bubbleOptionStyle: {},
   bubbleStyle: {},
   cache: false,
   cacheName: 'rsc_cache',
+  changable: false,
   className: '',
   contentStyle: {},
   customStyle: {},
-  controlStyle: { position: 'absolute', right: '0', top: '0' },
+  controlStyle: { position: 'absolute', right: '0', top: '50%', transform: 'translateY(-50%)' },
+  changeButtonStyle: {},
+  changeButtonText: ['選択肢', '自由入力'],
   customDelay: 1000,
   enableMobileAutoFocus: false,
   enableSmoothScroll: false,
@@ -798,8 +881,11 @@ ChatBot.defaultProps = {
   height: '520px',
   hideBotAvatar: false,
   hideHeader: false,
+  hideSecondInputOption: true,
   hideSubmitButton: false,
   hideUserAvatar: false,
+  inputOptionContainerStyle: {},
+  inputOptionElements: [],
   inputStyle: {},
   opened: undefined,
   placeholder: 'Type the message ...',
@@ -807,6 +893,8 @@ ChatBot.defaultProps = {
   recognitionEnable: false,
   recognitionLang: 'en',
   recognitionPlaceholder: 'Listening ...',
+  secondInputOptionContainerStyle: {},
+  secondInputOptionElements: [],
   speechSynthesis: {
     enable: false,
     lang: 'en',
