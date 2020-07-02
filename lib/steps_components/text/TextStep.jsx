@@ -65,7 +65,7 @@ class TextStep extends Component {
 
     const showAvatar = user ? !hideUserAvatar : !hideBotAvatar;
 
-    const imageAltText = user ? "Your avatar" : `${botName}'s avatar`;
+    const imageAltText = user ? 'Your avatar' : `${botName}'s avatar`;
 
     return (
       <TextStepContainer className={`rsc-ts ${user ? 'rsc-ts-user' : 'rsc-ts-bot'}`} user={user}>
