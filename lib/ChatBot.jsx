@@ -737,6 +737,14 @@ class ChatBot extends Component {
             {renderedSteps.map(this.renderStep)}
           </Content>
           <Footer className="rsc-footer" style={footerStyle} ref={this.secondInputOptionContainer}>
+            {!hideSecondInputOption && (
+              <SecondInputOptionContainer
+                className="rsc-second-input-option"
+                style={secondInputOptionContainerStyle}
+              >
+                {secondInputOptionElements}
+              </SecondInputOptionContainer>
+            )}
             {changable && (
               <ChangeButton
                 className="rsc-change-button"
@@ -786,14 +794,6 @@ class ChatBot extends Component {
             {/* non text mode */}
             {!textMode && (
               <InputOption className="rsc-input-option" style={inputOptionContainerStyle}>
-                {!hideSecondInputOption && (
-                  <SecondInputOptionContainer
-                    className="rsc-second-input-option"
-                    style={secondInputOptionContainerStyle}
-                  >
-                    {secondInputOptionElements}
-                  </SecondInputOptionContainer>
-                )}
                 {inputOptionElements}
               </InputOption>
             )}
