@@ -155,7 +155,6 @@ class ChatBot extends Component {
         });
       }
     );
-    console.log('componentDidMount');
     this.setState({
       currentStep,
       defaultUserSettings,
@@ -167,8 +166,6 @@ class ChatBot extends Component {
   }
 
   static getDerivedStateFromProps(props, state) {
-    console.log('props on chatbot', props.steps);
-    console.log('state on chatbot', state);
     const { opened, toggleFloating } = props;
     if (toggleFloating !== undefined && opened !== undefined && opened !== state.opened) {
       return {
@@ -293,8 +290,27 @@ class ChatBot extends Component {
         trigger
       });
 
+      // optionsの表示を消すためにステップの履歴からoptionsステップを削除する。
       renderedSteps.pop();
       previousSteps.pop();
+      renderedSteps.push(currentStep);
+      previousSteps.push(currentStep);
+
+      this.setState({
+        currentStep,
+        renderedSteps,
+        previousSteps
+      });
+    } else if (data && data.showUserInput) {
+      // 引数dataのshowUserInputオプションがtrueになっていればdata.valueをユーザー入力としてチャットに表示する
+      currentStep = Object.assign({}, defaultUserSettings, {
+        user: true,
+        value: data.value,
+        message: data.value,
+        trigger: data.trigger
+      });
+
+      // ユーザー入力(自動)のステップを追加する。
       renderedSteps.push(currentStep);
       previousSteps.push(currentStep);
 
@@ -468,8 +484,7 @@ class ChatBot extends Component {
   };
 
   handleSecondInputOption = event => {
-    console.log('handleSecondInput', this.state);
-    this.triggerNextStep({ value: event.detail.value, trigger: event.detail.trigger });
+    this.triggerNextStep(event.detail);
   };
 
   submitUserMessage = () => {
@@ -569,7 +584,6 @@ class ChatBot extends Component {
     const { options, component, asMessage } = step;
     const steps = this.generateRenderedStepsById();
     const previousStep = index > 0 ? renderedSteps[index - 1] : {};
-    console.log('render step', this.state);
 
     if (component && !asMessage) {
       return (
@@ -587,7 +601,6 @@ class ChatBot extends Component {
     }
 
     if (options) {
-      console.log('options step', this.state);
       return (
         <OptionsStep
           key={index}
@@ -724,6 +737,14 @@ class ChatBot extends Component {
             {renderedSteps.map(this.renderStep)}
           </Content>
           <Footer className="rsc-footer" style={footerStyle} ref={this.secondInputOptionContainer}>
+            {!hideSecondInputOption && (
+              <SecondInputOptionContainer
+                className="rsc-second-input-option"
+                style={secondInputOptionContainerStyle}
+              >
+                {secondInputOptionElements}
+              </SecondInputOptionContainer>
+            )}
             {changable && (
               <ChangeButton
                 className="rsc-change-button"
@@ -773,14 +794,6 @@ class ChatBot extends Component {
             {/* non text mode */}
             {!textMode && (
               <InputOption className="rsc-input-option" style={inputOptionContainerStyle}>
-                {!hideSecondInputOption && (
-                  <SecondInputOptionContainer
-                    className="rsc-second-input-option"
-                    style={secondInputOptionContainerStyle}
-                  >
-                    {secondInputOptionElements}
-                  </SecondInputOptionContainer>
-                )}
                 {inputOptionElements}
               </InputOption>
             )}
