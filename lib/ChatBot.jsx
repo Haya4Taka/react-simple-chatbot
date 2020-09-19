@@ -307,7 +307,8 @@ class ChatBot extends Component {
         user: true,
         value: data.value,
         message: data.value,
-        trigger: data.trigger
+        trigger: data.trigger,
+        metadata: data.metadata || {}
       });
 
       // ユーザー入力(自動)のステップを追加する。
