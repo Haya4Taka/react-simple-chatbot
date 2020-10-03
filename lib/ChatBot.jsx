@@ -14,13 +14,13 @@ import {
   FloatingIcon,
   Footer,
   Input,
-  SubmitButton,
+  CustomSubmitButton,
   ChangeButton,
   InputOption,
   SecondInputOptionContainer
 } from './components';
 import Recognition from './recognition';
-import { ChatIcon, CloseIcon, SubmitIcon, MicIcon } from './icons';
+import { ChatIcon, CloseIcon } from './icons';
 import { isMobile } from './utils';
 import { speakFn } from './speechSynthesis';
 
@@ -642,7 +642,6 @@ class ChatBot extends Component {
       opened,
       renderedSteps,
       speaking,
-      recognitionEnable,
       textMode
     } = this.state;
     const {
@@ -672,6 +671,7 @@ class ChatBot extends Component {
       secondInputOptionElements,
       style,
       submitButtonStyle,
+      submitButtonText,
       width,
       height
     } = this.props;
@@ -696,8 +696,8 @@ class ChatBot extends Component {
       });
     }
 
-    const icon =
-      (this.isInputValueEmpty() || speaking) && recognitionEnable ? <MicIcon /> : <SubmitIcon />;
+    // const icon =
+    //   (this.isInputValueEmpty() || speaking) && recognitionEnable ? <MicIcon /> : <SubmitIcon />;
 
     const inputPlaceholder = speaking
       ? recognitionPlaceholder
@@ -777,7 +777,7 @@ class ChatBot extends Component {
               <div style={controlStyle} className="rsc-controls">
                 {!currentStep.hideInput && !currentStep.hideExtraControl && customControl}
                 {!currentStep.hideInput && !hideSubmitButton && (
-                  <SubmitButton
+                  <CustomSubmitButton
                     className="rsc-submit-button"
                     style={submitButtonStyle}
                     onClick={this.handleSubmitButton}
@@ -786,8 +786,8 @@ class ChatBot extends Component {
                     speaking={speaking}
                     changable={changable}
                   >
-                    {icon}
-                  </SubmitButton>
+                    {submitButtonText}
+                  </CustomSubmitButton>
                 )}
               </div>
             )}
@@ -861,6 +861,7 @@ ChatBot.propTypes = {
   steps: PropTypes.arrayOf(PropTypes.object).isRequired,
   style: PropTypes.objectOf(PropTypes.any),
   submitButtonStyle: PropTypes.objectOf(PropTypes.any),
+  submitButtonText: PropTypes.string,
   userAvatar: PropTypes.string,
   userDelay: PropTypes.number,
   width: PropTypes.string
@@ -878,7 +879,13 @@ ChatBot.defaultProps = {
   className: '',
   contentStyle: {},
   customStyle: {},
-  controlStyle: { position: 'absolute', right: '0', top: '50%', transform: 'translateY(-50%)' },
+  controlStyle: {
+    position: 'absolute',
+    right: '0',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    height: '100%'
+  },
   changeButtonStyle: {},
   changeButtonText: ['選択肢', '自由入力'],
   customDelay: 1000,
@@ -916,6 +923,7 @@ ChatBot.defaultProps = {
   },
   style: {},
   submitButtonStyle: {},
+  submitButtonText: '送信する',
   toggleFloating: undefined,
   userDelay: 1000,
   width: '350px',
